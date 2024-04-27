@@ -1,5 +1,8 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
+from analizadorLexico import analizadorLexico
+from lexema import Lexema
+import json
 
 def nuevo():
     if textAreaInicial.get(1.0, tk.END).strip() != "":
@@ -13,7 +16,7 @@ def nuevo():
 def abrir_archivo():
     archivo = filedialog.askopenfilename(filetypes=[("Archivos de texto", "*.txt"), ("Todos los archivos", "*.*")])
     if archivo:
-        with open(archivo, "r") as f:
+        with open(archivo, "r", encoding="utf-8") as f:
             contenido = f.read()
         textAreaInicial.delete(1.0, tk.END)
         textAreaInicial.insert(1.0, contenido)
@@ -38,20 +41,23 @@ def guardar_como():
     except Exception as e:
         messagebox.showerror("Error al guardar", f"Se produjo un error al guardar el archivo: {str(e)}")
 
-def analizar_texto_y_mostrar_mongoDB():
-    pass
+def analizar_texto_wrapper(textArea):
+    texto = textArea.get(1.0, tk.END)
+    lexemas, errores = analizadorLexico(textArea, textAreaFinal)
+
 
 def salir():
     ventana.quit()
 
 def limpiar_editor():
     textAreaInicial.delete(1.0, tk.END)
+    textAreaFinal.delete(1.0, tk.END)
 
 # Crear la ventana principal
 ventana = tk.Tk()
 ventana.title("Traductor Mongo DB")
 ventana.configure(bg="#9195F6") 
-ventana.geometry("625x570")
+ventana.geometry("900x600")
 
 # Menú de opciones
 menu_opciones = tk.Menu(ventana)
@@ -73,7 +79,7 @@ submenu_archivo.add_command(label="Salir", command=salir)
 # Opción Análisis
 submenu_analisis = tk.Menu(menu_opciones, tearoff=0)
 menu_opciones.add_cascade(label="Análisis", menu=submenu_analisis)
-submenu_analisis.add_command(label="Traducir a Mongo DB", command=analizar_texto_y_mostrar_mongoDB)
+submenu_analisis.add_command(label="Traducir a Mongo DB", command=lambda: analizar_texto_wrapper(textAreaInicial))
 
 # Opción Tokens
 submenu_tokens = tk.Menu(menu_opciones, tearoff=0)
@@ -90,5 +96,9 @@ frame_textareas.pack(expand=True, fill=tk.BOTH, padx=20, pady=20)
 # Primer textarea
 textAreaInicial = tk.Text(frame_textareas, height=20, width=40)
 textAreaInicial.pack(side=tk.LEFT, padx=10, pady=10, expand=True, fill=tk.BOTH)
+
+# Segundo textarea
+textAreaFinal = tk.Text(frame_textareas, height=20, width=40, state="normal")
+textAreaFinal.pack(side=tk.LEFT, padx=10, pady=10, expand=True, fill=tk.BOTH)
 
 ventana.mainloop()
