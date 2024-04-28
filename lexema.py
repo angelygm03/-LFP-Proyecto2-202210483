@@ -9,4 +9,4 @@ class Error:
     def __init__(self, caracter, fila, columna):
         self.caracter = caracter
         self.fila = fila
-        self.columna = columna 
+        self.columna = columna

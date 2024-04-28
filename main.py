@@ -2,9 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from analizadorLexico import analizadorLexico, imprimirLexemas, generar_tabla_errores
 from lexema import Lexema, Error
-import webbrowser
-import json
-import os
+from analizadorSintactico import analizadorSintactico
 
 # Variable global para almacenar las sentencias generadas
 sentencias_generadas = []
@@ -48,13 +46,11 @@ def guardar_como():
         messagebox.showerror("Error al guardar", f"Se produjo un error al guardar el archivo: {str(e)}")
 
 def analizar_texto_wrapper(textAreaInicial, textAreaFinal):
-    global sentencias_generadas
     sentencias_generadas, lexemas, errores = analizadorLexico(textAreaInicial, textAreaFinal)
     imprimirLexemas(lexemas, errores)
     generar_tabla_errores(errores)
     print("Sentencias generadas en analizar_texto_wrapper:", sentencias_generadas)  
-    for sentencia in sentencias_generadas:
-        textAreaFinal.insert(tk.END, f"{sentencia}\n")
+    return sentencias_generadas
 
 
 def generar_tabla_tokens(lexemas):
@@ -95,7 +91,7 @@ submenu_archivo.add_command(label="Salir", command=salir)
 # Opción Análisis
 submenu_analisis = tk.Menu(menu_opciones, tearoff=0)
 menu_opciones.add_cascade(label="Análisis", menu=submenu_analisis)
-submenu_analisis.add_command(label="Traducir a Mongo DB", command=lambda: analizar_texto_wrapper(textAreaInicial, textAreaFinal))
+submenu_analisis.add_command(label="Traducir a Mongo DB", command=lambda: insertar_sentencias(textAreaInicial, textAreaFinal))
 
 # Opción Tokens
 submenu_tokens = tk.Menu(menu_opciones, tearoff=0)
@@ -117,5 +113,11 @@ textAreaInicial.pack(side=tk.LEFT, padx=10, pady=10, expand=True, fill=tk.BOTH)
 # Segundo textarea
 textAreaFinal = tk.Text(frame_textareas, height=20, width=40, state="normal")
 textAreaFinal.pack(side=tk.LEFT, padx=10, pady=10, expand=True, fill=tk.BOTH)
+
+def insertar_sentencias(textAreaInicial, textAreaFinal):
+    textAreaFinal.delete(1.0, tk.END)  # Limpiar el área final
+    sentencias_generadas = analizar_texto_wrapper(textAreaInicial, textAreaFinal)
+    for sentencia in sentencias_generadas:
+        textAreaFinal.insert(tk.END, f"{sentencia}\n")
 
 ventana.mainloop()
