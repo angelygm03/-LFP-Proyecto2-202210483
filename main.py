@@ -2,6 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 from analizadorLexico import analizadorLexico
 from lexema import Lexema
+import webbrowser
 import json
 
 def nuevo():
@@ -44,7 +45,6 @@ def guardar_como():
 def analizar_texto_wrapper(textArea):
     texto = textArea.get(1.0, tk.END)
     lexemas, errores = analizadorLexico(textArea, textAreaFinal)
-
 
 def salir():
     ventana.quit()
