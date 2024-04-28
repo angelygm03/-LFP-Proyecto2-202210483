@@ -1,9 +1,14 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from analizadorLexico import analizadorLexico
+from analizadorLexico import analizadorLexico, imprimirLexemas
 from lexema import Lexema
 import webbrowser
 import json
+import os
+
+# Variable global para almacenar las sentencias generadas
+sentencias_generadas = []
+lexemas = []
 
 def nuevo():
     if textAreaInicial.get(1.0, tk.END).strip() != "":
@@ -42,9 +47,18 @@ def guardar_como():
     except Exception as e:
         messagebox.showerror("Error al guardar", f"Se produjo un error al guardar el archivo: {str(e)}")
 
-def analizar_texto_wrapper(textArea):
-    texto = textArea.get(1.0, tk.END)
-    lexemas, errores = analizadorLexico(textArea, textAreaFinal)
+def analizar_texto_wrapper(textAreaInicial, textAreaFinal):
+    global sentencias_generadas
+    sentencias_generadas, lexemas = analizadorLexico(textAreaInicial, textAreaFinal)
+    imprimirLexemas(lexemas)  
+    print("Sentencias generadas en analizar_texto_wrapper:", sentencias_generadas)  
+    for sentencia in sentencias_generadas:
+        textAreaFinal.insert(tk.END, f"{sentencia}\n")
+
+def generar_tabla_tokens(lexemas):
+    print("Generando tabla de tokens...")
+    imprimirLexemas(lexemas)
+
 
 def salir():
     ventana.quit()
@@ -79,11 +93,12 @@ submenu_archivo.add_command(label="Salir", command=salir)
 # Opción Análisis
 submenu_analisis = tk.Menu(menu_opciones, tearoff=0)
 menu_opciones.add_cascade(label="Análisis", menu=submenu_analisis)
-submenu_analisis.add_command(label="Traducir a Mongo DB", command=lambda: analizar_texto_wrapper(textAreaInicial))
+submenu_analisis.add_command(label="Traducir a Mongo DB", command=lambda: analizar_texto_wrapper(textAreaInicial, textAreaFinal))
 
 # Opción Tokens
 submenu_tokens = tk.Menu(menu_opciones, tearoff=0)
 menu_opciones.add_cascade(label="Tokens", menu=submenu_tokens)
+submenu_tokens.add_command(label="Generar tabla", command=lambda: generar_tabla_tokens(lexemas))
 
 # Opción Errores
 submenu_errores = tk.Menu(menu_opciones, tearoff=0)
