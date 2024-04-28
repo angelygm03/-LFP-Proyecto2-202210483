@@ -129,9 +129,10 @@ def analizadorLexico(textAreaInicial, textAreaFinal):
     print("Lexemas:", lexemas)
     print("Errores:", errores)
 
-    return sentencias_generadas, lexemas
+    return sentencias_generadas, lexemas, errores
 
-def imprimirLexemas(lexemas):
+
+def imprimirLexemas(lexemas, errores):
     with open("lexemas.html", "w", encoding='utf-8') as f:
         f.write("<html>\n<head>\n<title>Listado de Tokens y Lexemas</title>\n</head>\n<body>\n")
         f.write("<h1>Listado de Tokens y Lexemas</h1>\n")
@@ -143,5 +144,24 @@ def imprimirLexemas(lexemas):
         
         f.write("</table>\n")
         f.write("</body>\n</html>")
-        
+
     webbrowser.open('file://' + os.path.realpath("lexemas.html"))
+
+def generar_tabla_errores(errores):
+    print("Generando tabla de errores...")
+    with open("errores.html", "w", encoding='utf-8') as f:
+        f.write("<html>\n<head>\n<title>Errores</title>\n</head>\n<body>\n")
+        f.write("<h1>Errores Lexicos y Sintacticos</h1>\n")
+        f.write("<table border='1'>\n")
+        f.write("<tr><th>Caracter Invalido</th><th>Cantidad</th><th>Fila</th><th>Columna</th></tr>\n")
+        caracteres_invalidos = {}
+        for error in errores:
+            if error.caracter not in caracteres_invalidos:
+                caracteres_invalidos[error.caracter] = {"cantidad": 1, "fila": error.fila, "columna": error.columna}
+            else:
+                caracteres_invalidos[error.caracter]["cantidad"] += 1
+        for caracter, info in caracteres_invalidos.items():
+            f.write(f"<tr><td>{caracter}</td><td>{info['cantidad']}</td><td>{info['fila']}</td><td>{info['columna']}</td></tr>\n")
+        f.write("</table>\n")
+        f.write("</body>\n</html>")
+    webbrowser.open('file://' + os.path.realpath("errores.html"))

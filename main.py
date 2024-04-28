@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
-from analizadorLexico import analizadorLexico, imprimirLexemas
-from lexema import Lexema
+from analizadorLexico import analizadorLexico, imprimirLexemas, generar_tabla_errores
+from lexema import Lexema, Error
 import webbrowser
 import json
 import os
@@ -49,11 +49,13 @@ def guardar_como():
 
 def analizar_texto_wrapper(textAreaInicial, textAreaFinal):
     global sentencias_generadas
-    sentencias_generadas, lexemas = analizadorLexico(textAreaInicial, textAreaFinal)
-    imprimirLexemas(lexemas)  
+    sentencias_generadas, lexemas, errores = analizadorLexico(textAreaInicial, textAreaFinal)
+    imprimirLexemas(lexemas, errores)
+    generar_tabla_errores(errores)
     print("Sentencias generadas en analizar_texto_wrapper:", sentencias_generadas)  
     for sentencia in sentencias_generadas:
         textAreaFinal.insert(tk.END, f"{sentencia}\n")
+
 
 def generar_tabla_tokens(lexemas):
     print("Generando tabla de tokens...")
