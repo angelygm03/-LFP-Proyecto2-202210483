@@ -79,8 +79,12 @@ def analizadorLexico(textAreaInicial, textAreaFinal):
                 fila += 1
                 columna = 0
                 continue                                        
+            # Ejemplo de manejo de errores para caracteres específicos
+            elif char in ['+', '-', '*', '/', '?', '¡', '¿', '!', '|', '$', '%', '_', '@']:
+                errores.append(Error("Error léxico", fila, columna, token_esperado=char, descripcion=f"No se esperaba el carácter '{char}'"))
             else:
-                errores.append(Error(f"{char}", fila, columna))
+                errores.append(Error("Error léxico", fila, columna, token_esperado="Token Esperado", descripcion="Descripción del error"))
+
     
     if palabra:
         if palabra in palabras_reservadas:
@@ -153,15 +157,11 @@ def generar_tabla_errores(errores):
         f.write("<html>\n<head>\n<title>Errores</title>\n</head>\n<body>\n")
         f.write("<h1>Errores Lexicos y Sintacticos</h1>\n")
         f.write("<table border='1'>\n")
-        f.write("<tr><th>Caracter Invalido</th><th>Cantidad</th><th>Fila</th><th>Columna</th></tr>\n")
-        caracteres_invalidos = {}
+        f.write("<tr><th>Tipo de Error</th><th>Línea</th><th>Columna</th><th>Token</th><th>Descripción</th></tr>\n")
+        
         for error in errores:
-            if error.caracter not in caracteres_invalidos:
-                caracteres_invalidos[error.caracter] = {"cantidad": 1, "fila": error.fila, "columna": error.columna}
-            else:
-                caracteres_invalidos[error.caracter]["cantidad"] += 1
-        for caracter, info in caracteres_invalidos.items():
-            f.write(f"<tr><td>{caracter}</td><td>{info['cantidad']}</td><td>{info['fila']}</td><td>{info['columna']}</td></tr>\n")
+            f.write(f"<tr><td>{error.tipo}</td><td>{error.fila}</td><td>{error.columna}</td><td>{error.token_esperado}</td><td>{error.descripcion}</td></tr>\n")
+        
         f.write("</table>\n")
         f.write("</body>\n</html>")
     webbrowser.open('file://' + os.path.realpath("errores.html"))

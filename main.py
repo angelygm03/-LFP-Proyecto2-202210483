@@ -57,7 +57,11 @@ def generar_tabla_tokens(lexemas):
     print("Generando tabla de tokens...")
     imprimirLexemas(lexemas)
 
-
+def insertar_sentencias(textAreaInicial, textAreaFinal):
+    sentencias_generadas = analizar_texto_wrapper(textAreaInicial, textAreaFinal)
+    for sentencia in sentencias_generadas:
+        textAreaFinal.insert(tk.END, f"{sentencia}\n")
+        
 def salir():
     ventana.quit()
 
@@ -113,11 +117,5 @@ textAreaInicial.pack(side=tk.LEFT, padx=10, pady=10, expand=True, fill=tk.BOTH)
 # Segundo textarea
 textAreaFinal = tk.Text(frame_textareas, height=20, width=40, state="normal")
 textAreaFinal.pack(side=tk.LEFT, padx=10, pady=10, expand=True, fill=tk.BOTH)
-
-def insertar_sentencias(textAreaInicial, textAreaFinal):
-    textAreaFinal.delete(1.0, tk.END)  # Limpiar el área final
-    sentencias_generadas = analizar_texto_wrapper(textAreaInicial, textAreaFinal)
-    for sentencia in sentencias_generadas:
-        textAreaFinal.insert(tk.END, f"{sentencia}\n")
 
 ventana.mainloop()
