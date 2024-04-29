@@ -82,7 +82,7 @@ def analizadorLexico(textAreaInicial, textAreaFinal):
                 columna = 0
                 continue                                        
             # Errores para caracteres específicos
-            elif char in ['+', '-', '*', '/', '?', '¡', '¿', '!', '|', '$', '%', '_', '@']:
+            elif char in ['+', '-', '*', '/', '?', '¡', '¿', '!', '|', '%', '_', '@']:
                 errores.append(Error("Error léxico", fila, columna, token_esperado=char, descripcion=f"No se esperaba el carácter '{char}'"))
             else:
                 errores.append(Error("Error léxico", fila, columna, token_esperado="Token Esperado", descripcion="Descripción del error"))
@@ -144,6 +144,24 @@ def analizadorLexico(textAreaInicial, textAreaFinal):
                                     sentencias_generadas.append(salida_final)
                                 else:
                                     errores.append(Error("Error léxico", fila, columna, descripcion=f"Datos de inserción no encontrados en línea {idx + 1}"))
+                            else:
+                                errores.append(Error("Error léxico", fila, columna, descripcion=f"Nombre de la colección no encontrado en línea {idx + 1}"))
+                        elif tipo_funcion == 'BuscarTodo':
+                            inicio_comillas = parte_funcion.find('“')
+                            fin_comillas = parte_funcion.find('”', inicio_comillas + 1)
+                            if inicio_comillas != -1 and fin_comillas != -1:
+                                nombre_coleccion = parte_funcion[inicio_comillas + 1:fin_comillas]
+                                salida_final = f"db.{nombre_coleccion}.find();"
+                                sentencias_generadas.append(salida_final)
+                            else:
+                                errores.append(Error("Error léxico", fila, columna, descripcion=f"Nombre de la colección no encontrado en línea {idx + 1}"))
+                        elif tipo_funcion == 'BuscarUnico':
+                            inicio_comillas = parte_funcion.find('“')
+                            fin_comillas = parte_funcion.find('”', inicio_comillas + 1)
+                            if inicio_comillas != -1 and fin_comillas != -1:
+                                nombre_coleccion = parte_funcion[inicio_comillas + 1:fin_comillas]
+                                salida_final = f"db.{nombre_coleccion}.findOne();"
+                                sentencias_generadas.append(salida_final)
                             else:
                                 errores.append(Error("Error léxico", fila, columna, descripcion=f"Nombre de la colección no encontrado en línea {idx + 1}"))
                         else:
