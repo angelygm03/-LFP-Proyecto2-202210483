@@ -3,14 +3,19 @@ from lexema import Lexema, Error
 import webbrowser
 import os
 
+import tkinter as tk
+from lexema import Lexema, Error
+import webbrowser
+import os
+
 def analizadorLexico(textAreaInicial, textAreaFinal):
     texto = textAreaInicial.get(1.0, tk.END)
     
     palabras_reservadas = {
         'CrearBD': 'use',
-        'EliminarBD': 'dropDataBase',
-        'CrearColeccion': 'createCollection',
-        'EliminarColeccion': 'dropCollection',
+        'EliminarBD': 'db.dropDatabase',
+        'CrearColeccion': 'db.createCollection',
+        'EliminarColeccion': 'db.',
         'InsertarUnico': 'insertOne',
         'ActualizarUnico': 'updateOne',
         'EliminarUnico': 'deleteOne',
@@ -85,7 +90,6 @@ def analizadorLexico(textAreaInicial, textAreaFinal):
             else:
                 errores.append(Error("Error léxico", fila, columna, token_esperado="Token Esperado", descripcion="Descripción del error"))
 
-    
     if palabra:
         if palabra in palabras_reservadas:
             lexemas.append(Lexema("Palabra Reservada", palabra, fila, columna - len(palabra)))
@@ -107,17 +111,41 @@ def analizadorLexico(textAreaInicial, textAreaFinal):
                     if parte_funcion.startswith(tipo_funcion):
                         if tipo_funcion == 'CrearBD':
                             nombre_bd = variable_asignacion.strip().split('=', 1)[-1].strip("“”")
-                            salida_final = f"{palabras_reservadas[tipo_funcion]}('{nombre_bd}');"
+                            salida_final = f"{palabras_reservadas[tipo_funcion]} ('{nombre_bd}');"
                             sentencias_generadas.append(salida_final)
                         elif tipo_funcion == 'EliminarBD':
                             salida_final = f"{palabras_reservadas[tipo_funcion]}();"
                             sentencias_generadas.append(salida_final)
+                        elif tipo_funcion == 'EliminarColeccion':
+                            inicio_comillas = parte_funcion.find('“')
+                            fin_comillas = parte_funcion.find('”', inicio_comillas + 1)
+                            if inicio_comillas != -1 and fin_comillas != -1:
+                                nombre_coleccion = parte_funcion[inicio_comillas + 1:fin_comillas]
+                                salida_final = f"db.{nombre_coleccion}.drop();"
+                                sentencias_generadas.append(salida_final)
+                            else:
+                                errores.append(f"Error léxico: Nombre de la colección no encontrado en línea {idx + 1}")
+                        elif tipo_funcion == 'InsertarUnico':
+                            inicio_comillas = parte_funcion.find('“') + 1
+                            fin_comillas = parte_funcion.find('”', inicio_comillas)
+                            if inicio_comillas != -1 and fin_comillas != -1:
+                                nombre_coleccion = parte_funcion[inicio_comillas:fin_comillas]
+                                inicio_datos = parte_funcion.find('{', fin_comillas)
+                                fin_datos = parte_funcion.rfind('}')
+                                if inicio_datos != -1 and fin_datos != -1:
+                                    datos = parte_funcion[inicio_datos:fin_datos + 1]
+                                    salida_final = f"db.{nombre_coleccion}.insertOne({datos});"
+                                    sentencias_generadas.append(salida_final)
+                                else:
+                                    errores.append(f"Error léxico: Datos de inserción no encontrados en línea {idx + 1}")
+                            else:
+                                errores.append(f"Error léxico: Nombre de la colección no encontrado en línea {idx + 1}")
                         else:
                             inicio_comillas = parte_funcion.find('“') + 1
                             fin_comillas = parte_funcion.find('”', inicio_comillas)
                             if inicio_comillas != -1 and fin_comillas != -1:
                                 nombre_coleccion = parte_funcion[inicio_comillas:fin_comillas]
-                                salida_final = f"{palabras_reservadas[tipo_funcion]}('{nombre_coleccion}');"
+                                salida_final = f"{palabras_reservadas[tipo_funcion]}('“{nombre_coleccion}”');"
                                 sentencias_generadas.append(salida_final)
                             else:
                                 errores.append(f"Error léxico: Nombre de la colección no encontrado en línea {idx + 1}")
