@@ -3,11 +3,6 @@ from lexema import Lexema, Error
 import webbrowser
 import os
 
-import tkinter as tk
-from lexema import Lexema, Error
-import webbrowser
-import os
-
 def analizadorLexico(textAreaInicial, textAreaFinal):
     texto = textAreaInicial.get(1.0, tk.END)
     
@@ -76,15 +71,17 @@ def analizadorLexico(textAreaInicial, textAreaFinal):
                 lexemas.append(Lexema("Igual", char, fila, columna))                     
             elif char in [';']:
                 lexemas.append(Lexema("Punto y coma", char, fila, columna)) 
-            elif char in ['"']:
-                lexemas.append(Lexema("Comillas dobles", char, fila, columna))                           
+            elif char in ['“']:
+                lexemas.append(Lexema("Comillas dobles apertura", char, fila, columna)) 
+            elif char in ['”']:
+                lexemas.append(Lexema("Comillas dobles cierre", char, fila, columna))                           
             elif char in [' ']:
                 continue
             elif char == '\n':
                 fila += 1
                 columna = 0
                 continue                                        
-            # Ejemplo de manejo de errores para caracteres específicos
+            # Errores para caracteres específicos
             elif char in ['+', '-', '*', '/', '?', '¡', '¿', '!', '|', '$', '%', '_', '@']:
                 errores.append(Error("Error léxico", fila, columna, token_esperado=char, descripcion=f"No se esperaba el carácter '{char}'"))
             else:
@@ -124,7 +121,16 @@ def analizadorLexico(textAreaInicial, textAreaFinal):
                                 salida_final = f"db.{nombre_coleccion}.drop();"
                                 sentencias_generadas.append(salida_final)
                             else:
-                                errores.append(f"Error léxico: Nombre de la colección no encontrado en línea {idx + 1}")
+                                errores.append(Error("Error léxico", fila, columna, descripcion=f"Nombre de la colección no encontrado en línea {idx + 1}"))
+                        elif tipo_funcion == 'CrearColeccion':
+                            inicio_comillas = parte_funcion.find('“') + 1
+                            fin_comillas = parte_funcion.find('”', inicio_comillas)
+                            if inicio_comillas != -1 and fin_comillas != -1:
+                                nombre_coleccion = parte_funcion[inicio_comillas:fin_comillas]
+                                salida_final = f"{palabras_reservadas[tipo_funcion]}('“{nombre_coleccion}”');"
+                                sentencias_generadas.append(salida_final)
+                            else:
+                                errores.append(Error("Error léxico", fila, columna, descripcion=f"Nombre de la colección no encontrado en línea {idx + 1}"))
                         elif tipo_funcion == 'InsertarUnico':
                             inicio_comillas = parte_funcion.find('“') + 1
                             fin_comillas = parte_funcion.find('”', inicio_comillas)
@@ -137,24 +143,15 @@ def analizadorLexico(textAreaInicial, textAreaFinal):
                                     salida_final = f"db.{nombre_coleccion}.insertOne({datos});"
                                     sentencias_generadas.append(salida_final)
                                 else:
-                                    errores.append(f"Error léxico: Datos de inserción no encontrados en línea {idx + 1}")
+                                    errores.append(Error("Error léxico", fila, columna, descripcion=f"Datos de inserción no encontrados en línea {idx + 1}"))
                             else:
-                                errores.append(f"Error léxico: Nombre de la colección no encontrado en línea {idx + 1}")
+                                errores.append(Error("Error léxico", fila, columna, descripcion=f"Nombre de la colección no encontrado en línea {idx + 1}"))
                         else:
-                            inicio_comillas = parte_funcion.find('“') + 1
-                            fin_comillas = parte_funcion.find('”', inicio_comillas)
-                            if inicio_comillas != -1 and fin_comillas != -1:
-                                nombre_coleccion = parte_funcion[inicio_comillas:fin_comillas]
-                                salida_final = f"{palabras_reservadas[tipo_funcion]}('“{nombre_coleccion}”');"
-                                sentencias_generadas.append(salida_final)
-                            else:
-                                errores.append(f"Error léxico: Nombre de la colección no encontrado en línea {idx + 1}")
+                            errores.append(Error("Error léxico", fila, columna, descripcion=f"La función no coincide con el tipo de función en línea {idx + 1}"))
                     else:
-                        errores.append(f"Error léxico: La función no coincide con el tipo de función en línea {idx + 1}")
+                        errores.append(Error("Error léxico", fila, columna, descripcion=f"Palabra clave desconocida en línea {idx + 1}"))
                 else:
-                    errores.append(f"Error léxico: Palabra clave desconocida en línea {idx + 1}")
-            else:
-                errores.append(f"Error léxico: Formato incorrecto en línea {idx + 1}")
+                    errores.append(Error("Error léxico", fila, columna, descripcion=f"Formato incorrecto en línea {idx + 1}"))
 
     print("Número de sentencias generadas:", len(sentencias_generadas))
     print("Sentencias generadas:", sentencias_generadas)
@@ -162,6 +159,8 @@ def analizadorLexico(textAreaInicial, textAreaFinal):
     print("Errores:", errores)
 
     return sentencias_generadas, lexemas, errores
+
+
 
 
 def imprimirLexemas(lexemas, errores):
