@@ -1,7 +1,7 @@
 import tkinter as tk
 from lexema import Lexema, Error
 import webbrowser
-import os
+import os, json
 
 def analizadorLexico(textAreaInicial, textAreaFinal):
     texto = textAreaInicial.get(1.0, tk.END)
@@ -21,6 +21,7 @@ def analizadorLexico(textAreaInicial, textAreaFinal):
     sentencias_generadas = []
     lexemas = []
     errores = []
+    sentencias = []
     palabra = ""
     dentro_cadena = False  
     columna = 0  
@@ -74,7 +75,13 @@ def analizadorLexico(textAreaInicial, textAreaFinal):
             elif char in ['“']:
                 lexemas.append(Lexema("Comillas dobles apertura", char, fila, columna)) 
             elif char in ['”']:
-                lexemas.append(Lexema("Comillas dobles cierre", char, fila, columna))                           
+                lexemas.append(Lexema("Comillas dobles cierre", char, fila, columna)) 
+            elif char in ['/']:
+                lexemas.append(Lexema("Diagonal", char, fila, columna))  
+            elif char in ['*']:
+                lexemas.append(Lexema("Asterisco", char, fila, columna))  
+            elif char in ['-']:
+                lexemas.append(Lexema("Guión", char, fila, columna))                            
             elif char in [' ']:
                 continue
             elif char == '\n':
@@ -82,10 +89,10 @@ def analizadorLexico(textAreaInicial, textAreaFinal):
                 columna = 0
                 continue                                        
             # Errores para caracteres específicos
-            elif char in ['+', '-', '*', '/', '?', '¡', '¿', '!', '|', '%', '_', '@']:
+            elif char in ['+', '?', '¡', '¿', '!', '|', '%', '_', '@']:
                 errores.append(Error("Error léxico", fila, columna, token_esperado=char, descripcion=f"No se esperaba el carácter '{char}'"))
             else:
-                errores.append(Error("Error léxico", fila, columna, token_esperado="Token Esperado", descripcion="Descripción del error"))
+                pass
 
     if palabra:
         if palabra in palabras_reservadas:
@@ -114,56 +121,60 @@ def analizadorLexico(textAreaInicial, textAreaFinal):
                             salida_final = f"{palabras_reservadas[tipo_funcion]}();"
                             sentencias_generadas.append(salida_final)
                         elif tipo_funcion == 'EliminarColeccion':
-                            inicio_comillas = parte_funcion.find('“')
-                            fin_comillas = parte_funcion.find('”', inicio_comillas + 1)
+                            inicio_comillas = parte_funcion.find('(') + 1
+                            fin_comillas = parte_funcion.find(')', inicio_comillas)
                             if inicio_comillas != -1 and fin_comillas != -1:
-                                nombre_coleccion = parte_funcion[inicio_comillas + 1:fin_comillas]
+                                nombre_coleccion = parte_funcion[inicio_comillas:fin_comillas].strip('\"')
                                 salida_final = f"db.{nombre_coleccion}.drop();"
                                 sentencias_generadas.append(salida_final)
                             else:
                                 errores.append(Error("Error léxico", fila, columna, descripcion=f"Nombre de la colección no encontrado en línea {idx + 1}"))
+
                         elif tipo_funcion == 'CrearColeccion':
-                            inicio_comillas = parte_funcion.find('“') + 1
-                            fin_comillas = parte_funcion.find('”', inicio_comillas)
+                            inicio_comillas = parte_funcion.find('(') + 1
+                            fin_comillas = parte_funcion.find(')', inicio_comillas)
                             if inicio_comillas != -1 and fin_comillas != -1:
-                                nombre_coleccion = parte_funcion[inicio_comillas:fin_comillas]
-                                salida_final = f"{palabras_reservadas[tipo_funcion]}('“{nombre_coleccion}”');"
+                                nombre_coleccion = parte_funcion[inicio_comillas:fin_comillas].strip('\"')
+                                salida_final = f"db.createCollection('{nombre_coleccion}');"
                                 sentencias_generadas.append(salida_final)
                             else:
                                 errores.append(Error("Error léxico", fila, columna, descripcion=f"Nombre de la colección no encontrado en línea {idx + 1}"))
                         elif tipo_funcion == 'InsertarUnico':
-                            inicio_comillas = parte_funcion.find('“') + 1
-                            fin_comillas = parte_funcion.find('”', inicio_comillas)
-                            if inicio_comillas != -1 and fin_comillas != -1:
-                                nombre_coleccion = parte_funcion[inicio_comillas:fin_comillas]
-                                inicio_datos = parte_funcion.find('{', fin_comillas)
-                                fin_datos = parte_funcion.rfind('}')
-                                if inicio_datos != -1 and fin_datos != -1:
-                                    datos = parte_funcion[inicio_datos:fin_datos + 1]
-                                    salida_final = f"db.{nombre_coleccion}.insertOne({datos});"
+                            inicio_parentesis = parte_funcion.find("(")
+                            fin_parentesis = parte_funcion.find(")")
+                            if inicio_parentesis != -1 and fin_parentesis != -1:
+                                inicio_comillas = parte_funcion.find('"', inicio_parentesis + 1)
+                                fin_comillas = parte_funcion.find('"', inicio_comillas + 1)
+                                if inicio_comillas != -1 and fin_comillas != -1:
+                                    nombre_coleccion = parte_funcion[inicio_parentesis + 1:fin_parentesis].strip()
+                                    json_text = parte_funcion[fin_parentesis + 1:fin_comillas].strip()
+                                    salida_final = f"db.{nombre_coleccion}.insertOne({json_text});"
                                     sentencias_generadas.append(salida_final)
                                 else:
-                                    errores.append(Error("Error léxico", fila, columna, descripcion=f"Datos de inserción no encontrados en línea {idx + 1}"))
+                                    errores.append(Error("Error léxico", fila, columna, descripcion=f"Formato incorrecto en línea {idx + 1}"))
                             else:
-                                errores.append(Error("Error léxico", fila, columna, descripcion=f"Nombre de la colección no encontrado en línea {idx + 1}"))
+                                errores.append(Error("Error léxico", fila, columna, descripcion=f"Datos de inserción no encontrados en línea {idx + 1}"))
+
                         elif tipo_funcion == 'BuscarTodo':
-                            inicio_comillas = parte_funcion.find('“')
-                            fin_comillas = parte_funcion.find('”', inicio_comillas + 1)
+                            inicio_comillas = parte_funcion.find('(') + 1
+                            fin_comillas = parte_funcion.find(')', inicio_comillas)
                             if inicio_comillas != -1 and fin_comillas != -1:
-                                nombre_coleccion = parte_funcion[inicio_comillas + 1:fin_comillas]
+                                nombre_coleccion = parte_funcion[inicio_comillas:fin_comillas].strip('\"')
                                 salida_final = f"db.{nombre_coleccion}.find();"
                                 sentencias_generadas.append(salida_final)
                             else:
                                 errores.append(Error("Error léxico", fila, columna, descripcion=f"Nombre de la colección no encontrado en línea {idx + 1}"))
+
                         elif tipo_funcion == 'BuscarUnico':
-                            inicio_comillas = parte_funcion.find('“')
-                            fin_comillas = parte_funcion.find('”', inicio_comillas + 1)
+                            inicio_comillas = parte_funcion.find('(') + 1
+                            fin_comillas = parte_funcion.find(')', inicio_comillas)
                             if inicio_comillas != -1 and fin_comillas != -1:
-                                nombre_coleccion = parte_funcion[inicio_comillas + 1:fin_comillas]
+                                nombre_coleccion = parte_funcion[inicio_comillas:fin_comillas].strip('\"')
                                 salida_final = f"db.{nombre_coleccion}.findOne();"
                                 sentencias_generadas.append(salida_final)
                             else:
                                 errores.append(Error("Error léxico", fila, columna, descripcion=f"Nombre de la colección no encontrado en línea {idx + 1}"))
+
                         else:
                             errores.append(Error("Error léxico", fila, columna, descripcion=f"La función no coincide con el tipo de función en línea {idx + 1}"))
                     else:
@@ -177,9 +188,6 @@ def analizadorLexico(textAreaInicial, textAreaFinal):
     print("Errores:", errores)
 
     return sentencias_generadas, lexemas, errores
-
-
-
 
 def imprimirLexemas(lexemas, errores):
     with open("lexemas.html", "w", encoding='utf-8') as f:
@@ -202,11 +210,13 @@ def generar_tabla_errores(errores):
         f.write("<html>\n<head>\n<title>Errores</title>\n</head>\n<body>\n")
         f.write("<h1>Errores Lexicos y Sintacticos</h1>\n")
         f.write("<table border='1'>\n")
-        f.write("<tr><th>Tipo de Error</th><th>Línea</th><th>Columna</th><th>Token</th><th>Descripción</th></tr>\n")
+        f.write("<tr><th>Tipo de Error</th><th>Línea</th><th>Columna</th><th>Token</th></tr>\n")
         
         for error in errores:
-            f.write(f"<tr><td>{error.tipo}</td><td>{error.fila}</td><td>{error.columna}</td><td>{error.token_esperado}</td><td>{error.descripcion}</td></tr>\n")
+            token_esperado = error.token_esperado if error.token_esperado is not None else ""
+            f.write(f"<tr><td>{error.tipo}</td><td>{error.fila}</td><td>{error.columna}</td><td>{token_esperado}</td></tr>\n")
         
         f.write("</table>\n")
         f.write("</body>\n</html>")
     webbrowser.open('file://' + os.path.realpath("errores.html"))
+
